@@ -1,0 +1,9 @@
+{
+    "ventilador_estado": true,
+    "velocidad": 40,
+    "temperatura_deseada": 23,
+    "humedad_deseada": 50,
+    "ultima_actualizacion": "2025-11-17T06:14:13+01:00",
+    "luces1_estado": false,
+    "luces2_estado": false
+}
