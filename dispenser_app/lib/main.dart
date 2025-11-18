@@ -9,6 +9,7 @@ import 'screens/detections_screen.dart';
 import 'screens/detection_messages_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/thermal_screen.dart';
+import 'screens/thermal2_screen.dart';
 
 void main() {
   runApp(DispenserApp());
@@ -37,6 +38,7 @@ class DispenserApp extends StatelessWidget {
         '/messages': (context) => DetectionMessagesScreen(),
         '/stats': (context) => StatsScreen(),
         '/thermal': (context) => ThermalScreen(),
+        '/thermal2': (context) => Thermal2Screen(),
         '/light': (context) => LightsScreen(),
       },
     );

@@ -4,139 +4,100 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Manejar preflight request
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+// Manejo de preflight (CORS)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Archivo para guardar los datos de comida - RUTA ABSOLUTA
-$dataFile =  'comida_data.json';
+// ---- CONFIG BD ----
+$host = "localhost";
+$user = "root";
+$pass = "";
+$dbname = "sensoresdb";
 
-// Datos iniciales para diferentes platos - SOLO parámetros requeridos
-$defaultData = [
-    'comida1' => [
-        'vacio' => 10,
-        'comida' => 90
-    ],
-    'comida2' => [
-        'vacio' => 20,
-        'comida' => 80
-    ],
-    'comida3' => [
-        'vacio' => 15,
-        'comida' => 85
-    ],
-    'comida4' => [
-        'vacio' => 5,
-        'comida' => 95
-    ]
-];
+// Conexión
+$conn = new mysqli($host, $user, $pass, $dbname);
 
-// Función para leer datos del archivo
-function leerDatosComida($archivo, $default) {
-    if (file_exists($archivo)) {
-        $contenido = file_get_contents($archivo);
-        $datos = json_decode($contenido, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            return $datos;
-        }
-    }
-    return $default;
+if ($conn->connect_error) {
+    die(json_encode(["error" => "Error de conexión: " . $conn->connect_error]));
 }
 
-// Función para guardar datos en el archivo
-function guardarDatosComida($archivo, $datos) {
-    // Asegurar que el directorio tenga permisos de escritura
-    $directorio = dirname($archivo);
-    if (!is_writable($directorio)) {
-        throw new Exception("Directorio sin permisos de escritura: $directorio");
-    }
-    
-    $resultado = file_put_contents($archivo, json_encode($datos, JSON_PRETTY_PRINT));
-    
-    if ($resultado === false) {
-        throw new Exception("Error escribiendo archivo: $archivo");
-    }
-    
-    return $datos;
+// Solo manejaremos un registro (ID = 1)
+$sqlFindId = "SELECT id FROM datos_sensor ORDER BY id ASC LIMIT 1";
+$resultId = $conn->query($sqlFindId);
+
+if ($resultId && $resultId->num_rows > 0) {
+    $rowId = $resultId->fetch_assoc();
+    $recordId = $rowId['id']; // Aquí guardamos el ID real (ej. 1, 45, etc.)
+} else {
+    // Si la tabla está vacía, detenemos todo
+    die(json_encode(["error" => "La tabla 'datos_sensor' está vacía. Inserta al menos un registro."]));
 }
 
-// Procesar request
-try {
-    $method = $_SERVER['REQUEST_METHOD'];
-    
-    switch ($method) {
-        case 'GET':
-            // Obtener plato específico
-            $plato = $_GET['plato'] ?? null;
-            $datos = leerDatosComida($dataFile, $defaultData);
-            
-            if ($plato && isset($datos[$plato])) {
-                $respuesta = $datos[$plato];
-            } else if ($plato) {
-                // Si el plato no existe, crear uno nuevo SOLO con parámetros requeridos
-                $respuesta = ['vacio' => 10, 'comida' => 90];
-            } else {
-                $respuesta = $datos;
-            }
-            
-            // Log en consola
-            error_log("📥 GET Comida - Plato: " . ($plato ?? 'todos') . " - Datos: " . json_encode($respuesta));
-            echo json_encode($respuesta);
-            break;
-            
-        case 'POST':
-            // Actualizar datos de un plato
-            $input = file_get_contents('php://input');
-            $nuevosDatos = json_decode($input, true);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('JSON inválido');
-            }
-            
-            $plato = $nuevosDatos['plato'] ?? null;
-            if (!$plato) {
-                throw new Exception('Plato no especificado');
-            }
-            
-            $datosActuales = leerDatosComida($dataFile, $defaultData);
-            
-            // Filtrar solo los parámetros permitidos
-            $datosFiltrados = [];
-            if (isset($nuevosDatos['datos']['vacio'])) {
-                $datosFiltrados['vacio'] = $nuevosDatos['datos']['vacio'];
-            }
-            if (isset($nuevosDatos['datos']['comida'])) {
-                $datosFiltrados['comida'] = $nuevosDatos['datos']['comida'];
-            }
-            
-            // Combinar con datos existentes
-            $datosActuales[$plato] = array_merge($datosActuales[$plato] ?? ['vacio' => 10, 'comida' => 90], $datosFiltrados);
-            
-            // Guardar datos
-            $datosGuardados = guardarDatosComida($dataFile, $datosActuales);
-            
-            // Log en consola
-            error_log("💾 POST Comida - Plato: $plato - Datos: " . json_encode($datosFiltrados));
-            error_log("💾 Archivo guardado en: $dataFile");
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Datos de comida guardados exitosamente',
-                'plato' => $plato,
-                'data' => $datosGuardados[$plato]
-            ]);
-            break;
-            
-        default:
-            http_response_code(405);
-            echo json_encode(['error' => 'Método no permitido']);
-            break;
+// ----------------------------------------------------------------------------------
+// GET → Obtener datos de la tabla
+// ----------------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+
+    $sql = "SELECT nivel_comida, fecha
+            FROM datos_sensor 
+            WHERE id = $recordId LIMIT 1";
+
+    $res = $conn->query($sql);
+
+    if ($res && $res->num_rows > 0) {
+
+        $row = $res->fetch_assoc();
+
+        echo json_encode([
+            "nivel_comida" => intval($row["nivel_comida"]),
+
+            "fecha"=> $row["fecha"]
+        ]);
+
+    } else {
+        echo json_encode(["error" => "No hay datos"]);
     }
-    
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
-    error_log("❌ Error Comida API: " . $e->getMessage());
+
+    exit();
 }
+
+// ----------------------------------------------------------------------------------
+// POST → Actualizar datos
+// ----------------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $body = file_get_contents("php://input");
+    $data = json_decode($body, true);
+
+    if (!$data) {
+        echo json_encode(["error" => "JSON inválido"]);
+        exit();
+    }
+
+    $comidaniv = isset($data["nivel_comida"]) ? intval($data["nivel_comida"]) : 0;
+    //$temp       = isset($data["temperatura"]) ? floatval($data["temperatura"]) : 22;
+    //$humedad    = isset($data["humedad"]) ? floatval($data["humedad"]) : 50;
+
+    $sql = "UPDATE datos_sensor SET 
+                nivel_comida = $comidaniv,
+                
+                fecha = NOW()
+            WHERE id = $recordId";
+
+    if ($conn->query($sql) === TRUE) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Datos actualizados correctamente",
+        ]);
+    } else {
+        echo json_encode(["error" => "Error al guardar: " . $conn->error]);
+    }
+
+    exit();
+}
+
+// ----------------------------------------------------------------------------------
+echo json_encode(["error" => "Método no permitido"]);
+$conn->close();
 ?>

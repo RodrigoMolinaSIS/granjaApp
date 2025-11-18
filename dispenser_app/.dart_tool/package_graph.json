@@ -13,6 +13,7 @@
         "flutter_mjpeg",
         "http",
         "path_provider",
+        "sleek_circular_slider",
         "web_socket_channel"
       ],
       "devDependencies": [
@@ -54,6 +55,15 @@
         "async",
         "crypto",
         "stream_channel"
+      ]
+    },
+    {
+      "name": "http",
+      "version": "0.13.6",
+      "dependencies": [
+        "async",
+        "http_parser",
+        "meta"
       ]
     },
     {
@@ -178,6 +188,20 @@
       ]
     },
     {
+      "name": "flutter_hooks",
+      "version": "0.21.3+1",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "visibility_detector",
+      "version": "0.4.0+2",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
       "name": "crypto",
       "version": "3.0.7",
       "dependencies": [
@@ -190,6 +214,16 @@
       "dependencies": [
         "collection",
         "meta"
+      ]
+    },
+    {
+      "name": "http_parser",
+      "version": "4.1.2",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner",
+        "typed_data"
       ]
     },
     {
@@ -350,34 +384,8 @@
       "dependencies": []
     },
     {
-      "name": "visibility_detector",
-      "version": "0.4.0+2",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
-      "name": "http",
-      "version": "0.13.6",
-      "dependencies": [
-        "async",
-        "http_parser",
-        "meta"
-      ]
-    },
-    {
-      "name": "http_parser",
-      "version": "4.1.2",
-      "dependencies": [
-        "collection",
-        "source_span",
-        "string_scanner",
-        "typed_data"
-      ]
-    },
-    {
-      "name": "flutter_hooks",
-      "version": "0.21.3+1",
+      "name": "sleek_circular_slider",
+      "version": "2.1.0",
       "dependencies": [
         "flutter"
       ]

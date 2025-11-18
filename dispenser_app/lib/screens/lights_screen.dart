@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'home_button.dart';
-import 'info_box.dart';
-import 'regulador_button.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-//import 'package:http/http.dart' as http;
 
 class LightsScreen extends StatefulWidget {
   @override
@@ -13,17 +9,15 @@ class LightsScreen extends StatefulWidget {
 
 class _LightsScreen extends State<LightsScreen> {
   Map<String, dynamic>? data;
-  String? jsonFile;
   bool isLoading = true;
   String errorMessage = '';
 
-  // Variables de estado
-  bool _luces1Estado = false;
-  bool _luces2Estado = false;
-  String _foff = 'assets/images/foff.png';
-  String _fonn = 'assets/images/fonn.png';
+  bool _luz1Estado = false;
 
-  final String serverUrl = 'http://localhost/thermal_api'; // Usa tu IP
+  final String _fOff = 'assets/images/foff.png';
+  final String _fOn = 'assets/images/fonn.png';
+
+  final String serverUrl = 'http://localhost/thermal_api/luces_api.php';
 
   @override
   void initState() {
@@ -33,30 +27,29 @@ class _LightsScreen extends State<LightsScreen> {
 
   Future<void> _cargarDatosServidor() async {
     try {
-      setState(() { isLoading = true; errorMessage = ''; });
+      setState(() => {isLoading = true, errorMessage = ''});
 
       final response = await http.get(
-        Uri.parse('$serverUrl/luces_api.php'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(serverUrl),
+
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = json.decode(response.body);
+        final jsonData = json.decode(response.body);
+
+        if (jsonData["error"] != null) {
+          throw Exception(jsonData["error"]);
+        }
 
         setState(() {
-          data = jsonData;
-          _luces1Estado = data?['luces1_estado'] ?? false;
-          _luces2Estado = data?['luces2_estado'] ?? false;
+          //data = jsonData;
+          _luz1Estado = jsonData['luces_estado'] == "1" || jsonData['luces_estado'] == 1;
           isLoading = false;
         });
-
-        print('✅ Datos cargados desde servidor PHP');
       } else {
         throw Exception('Error del servidor: ${response.statusCode}');
       }
-
     } catch (e) {
-      print('❌ Error cargando datos: $e');
       setState(() {
         isLoading = false;
         errorMessage = 'Error conectando al servidor: $e';
@@ -64,229 +57,132 @@ class _LightsScreen extends State<LightsScreen> {
     }
   }
 
-  // Guardar datos en el servidor PHP
   Future<void> _guardarCambiosServidor() async {
     try {
-      // Preparar datos para enviar
-      final Map<String, dynamic> nuevosDatos = {
-        'luces1_estado': _luces1Estado,
-        'luces2_estado': _luces2Estado,
-        'ultima_actualizacion': DateTime.now().toIso8601String(),
-      };
-
       final response = await http.post(
-        Uri.parse('$serverUrl/api.php'),
+        Uri.parse(serverUrl),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(nuevosDatos),
+        body: json.encode({'luces_estado': _luz1Estado ? 1 : 0}),
       );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
+      final jsonData = json.decode(response.body);
 
-        setState(() {
-          data = nuevosDatos;
-        });
-
-        print('💾 Datos guardados en servidor PHP: $nuevosDatos');
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Configuración guardada en servidor'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      } else {
-        throw Exception('Error del servidor: ${response.statusCode}');
+      if (jsonData["success"] != true) {
+        throw Exception("No se pudo guardar");
       }
 
-    } catch (e) {
-      print('❌ Error guardando datos: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error conectando al servidor'),
+          content: Text('Luz actualizada en servidor'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error guardando en el servidor'),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
         ),
       );
     }
   }
 
-
-
-  // Métodos de cambio (actualizados para usar servidor PHP)
-  void _cambiarEstadoLight1(bool nuevoEstado) {
-    setState(() {
-      _luces1Estado = nuevoEstado;
-    });
+  void _cambiarEstadoLuz(bool value) {
+    setState(() => _luz1Estado = value);
     _guardarCambiosServidor();
   }
 
-  void _cambiarEstadoLight2(bool nuevoEstado) {
-    setState(() {
-      _luces2Estado = nuevoEstado;
-    });
-    _guardarCambiosServidor();
-  }
-
-  String _cambiarImagen(bool nuevoEstado) {
-    return nuevoEstado ? _fonn : _foff;
-
-
-  }
+  String _img(bool estado) => estado ? _fOn : _fOff;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ambientes'),
+        title: Text('Control de Luces'),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _cargarDatosServidor,
-            tooltip: 'Actualizar datos',
-          ),
-          IconButton(
-            icon: Icon(Icons.save),
-            onPressed: _guardarCambiosServidor,
-            tooltip: 'Guardar en servidor',
           ),
         ],
       ),
       body: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('images/fondop.jpg'),
-                  fit: BoxFit.cover,
-                ),
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('images/fondop.jpg'),
+                fit: BoxFit.cover,
               ),
             ),
-            Container(color: Colors.black.withOpacity(0.6)),
+          ),
+          Container(color: Colors.white.withOpacity(0.9)),
 
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Panel de Control server",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Servidor: $serverUrl',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                    Text(
-                      'Última actualización: ${data?['ultima_actualizacion'] != null ?
-                      DateTime.parse(data!['ultima_actualizacion']).toString().substring(0, 16) :
-                      '--'}',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                    const SizedBox(height: 20),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  SizedBox(height: 20),
+                  Text("Panel de Luz",
+                      style: TextStyle(color: Colors.white, fontSize: 22)),
 
-                    if (isLoading)
-                      Column(
+                  SizedBox(height: 10),
+
+                  if (isLoading)
+                    Column(children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 10),
+                      Text("Cargando...", style: TextStyle(color: Colors.white)),
+                    ]),
+
+                  if (errorMessage.isNotEmpty)
+                    Column(children: [
+                      Icon(Icons.error, color: Colors.red),
+                      SizedBox(height: 10),
+                      Text(errorMessage, style: TextStyle(color: Colors.white)),
+                    ]),
+
+                  if (!isLoading && errorMessage.isEmpty)
+                    Expanded(
+                      child: Column(
                         children: [
-                          CircularProgressIndicator(color: Colors.white),
-                          SizedBox(height: 16),
-                          Text('Cargando datos...', style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
+                          // SWITCH DE LUZ 1
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.purple),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: SwitchListTile(
+                              title: Text("Luz Principal",
+                                  style: TextStyle(color: Colors.white)),
+                              value: _luz1Estado,
+                              onChanged: _cambiarEstadoLuz,
+                              activeColor: Colors.green,
+                            ),
+                          ),
 
-                    if (errorMessage.isNotEmpty)
-                      Column(
-                        children: [
-                          Icon(Icons.error, color: Colors.red, size: 50),
-                          SizedBox(height: 16),
-                          Text(errorMessage, style: TextStyle(color: Colors.white)),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => _cargarDatosServidor,
-                            child: Text('Reintentar'),
+                          SizedBox(height: 20),
+
+                          // IMAGEN
+                          SizedBox(
+                            width: 220,
+                            height: 380,
+                            child: Image.asset(_img(_luz1Estado)),
                           ),
                         ],
                       ),
-
-                    if (!isLoading && errorMessage.isEmpty)
-                      Expanded(
-                        child: Wrap(
-                          direction: Axis.vertical,
-                          spacing: 20,
-                          runSpacing: 20,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            // VENTILADOR - Switch
-                            InfoBox(
-                              title: 'luz1',
-                              value: _luces1Estado ? 'ON' : 'OFF',
-                              unit: '',
-                              color: _luces1Estado ? Colors.greenAccent : Colors.redAccent,
-                              height: 100,
-                              width: 250,
-                              child: Switch(
-                                value: _luces1Estado,
-                                onChanged: _cambiarEstadoLight1,
-                                activeColor: Colors.green,
-                                inactiveThumbColor: Colors.red,
-                              ),
-                            ),
-
-                            // VELOCIDAD - Regulador
-                            InfoBox(
-                              title: 'luz2',
-                              value: _luces2Estado ? 'ON' : 'OFF',
-                              unit: '',
-                              color: _luces2Estado ? Colors.greenAccent : Colors.redAccent,
-                              height: 100,
-                              width: 250,
-                              child: Switch(
-                                value: _luces2Estado,
-                                onChanged: _cambiarEstadoLight2,
-                                activeColor: Colors.green,
-                                inactiveThumbColor: Colors.red,
-                              ),
-                            ),
-                            // TEMPERATURA - Regulador
-                            Container(
-                              decoration: BoxDecoration(
-
-                                image: DecorationImage(
-                                  image: AssetImage(_cambiarImagen(_luces1Estado)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-
-                                image: DecorationImage(
-                                  image: AssetImage(_cambiarImagen(_luces2Estado)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-
-                            // HUMEDAD - Regulador
-
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Sistema de monitoreo inteligente',
-                      style: TextStyle(color: Colors.white54, fontSize: 13),
                     ),
-                  ],
-                ),
+
+                  SizedBox(height: 10),
+                  Text("Sistema de monitoreo inteligente",
+                      style: TextStyle(color: Colors.white54)),
+                ],
               ),
             ),
-          ]
+          ),
+        ],
       ),
     );
   }

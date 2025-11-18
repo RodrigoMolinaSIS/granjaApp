@@ -4,92 +4,101 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Manejar preflight request
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+// Manejo de preflight (CORS)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Archivo para guardar los datos
-$dataFile = 'thermal_data.json';
+// ---- CONFIG BD ----
+$host = "localhost";
+$user = "root";
+$pass = "";
+$dbname = "sensoresdb";
 
-// Datos iniciales
-$defaultData = [
-    'ventilador_estado' => false,
-    'velocidad' => 0,
-    'temperatura_deseada' => 22,
-    'humedad_deseada' => 50,
-    'ultima_actualizacion' => date('c')
-];
+// Conexión
+$conn = new mysqli($host, $user, $pass, $dbname);
 
-// Función para leer datos del archivo
-function leerDatos($archivo, $default) {
-    if (file_exists($archivo)) {
-        $contenido = file_get_contents($archivo);
-        $datos = json_decode($contenido, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            return $datos;
-        }
+if ($conn->connect_error) {
+    die(json_encode(["error" => "Error de conexión: " . $conn->connect_error]));
+}
+
+// Solo manejaremos un registro (ID = 1)
+$sqlFindId = "SELECT id FROM datos_sensor ORDER BY id ASC LIMIT 1";
+$resultId = $conn->query($sqlFindId);
+
+if ($resultId && $resultId->num_rows > 0) {
+    $rowId = $resultId->fetch_assoc();
+    $recordId = $rowId['id']; // Aquí guardamos el ID real (ej. 1, 45, etc.)
+} else {
+    // Si la tabla está vacía, detenemos todo
+    die(json_encode(["error" => "La tabla 'datos_sensor' está vacía. Inserta al menos un registro."]));
+}
+
+// ----------------------------------------------------------------------------------
+// GET → Obtener datos de la tabla
+// ----------------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+
+    $sql = "SELECT ventilador_estado, temperatura, humedad, fecha
+            FROM datos_sensor 
+            WHERE id = $recordId LIMIT 1";
+
+    $res = $conn->query($sql);
+
+    if ($res && $res->num_rows > 0) {
+
+        $row = $res->fetch_assoc();
+
+        echo json_encode([
+            "ventilador_estado"   => boolval($row["ventilador_estado"]),
+            "temperatura" => floatval($row["temperatura"]),
+            "humedad"     => floatval($row["humedad"]),
+            "fecha"=> $row["fecha"]
+        ]);
+
+    } else {
+        echo json_encode(["error" => "No hay datos"]);
     }
-    return $default;
+
+    exit();
 }
 
-// Función para guardar datos en el archivo
-function guardarDatos($archivo, $datos) {
-    $datos['ultima_actualizacion'] = date('c');
-    file_put_contents($archivo, json_encode($datos, JSON_PRETTY_PRINT));
-    return $datos;
-}
+// ----------------------------------------------------------------------------------
+// POST → Actualizar datos
+// ----------------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-// Procesar request
-try {
-    $method = $_SERVER['REQUEST_METHOD'];
-    
-    switch ($method) {
-        case 'GET':
-            // Obtener datos actuales
-            $datos = leerDatos($dataFile, $defaultData);
-            
-            // Log en consola
-            error_log("📥 GET - Datos enviados: " . json_encode($datos));
-            echo json_encode($datos);
-            break;
-            
-        case 'POST':
-            // Leer datos del body
-            $input = file_get_contents('php://input');
-            $nuevosDatos = json_decode($input, true);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('JSON inválido');
-            }
-            
-            // Combinar con datos existentes
-            $datosActuales = leerDatos($dataFile, $defaultData);
-            $datosActualizados = array_merge($datosActuales, $nuevosDatos);
-            
-            // Guardar datos
-            $datosGuardados = guardarDatos($dataFile, $datosActualizados);
-            
-            // Log en consola
-            error_log("💾 POST - Datos recibidos: " . $input);
-            error_log("💾 POST - Datos guardados: " . json_encode($datosGuardados));
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Datos guardados exitosamente',
-                'data' => $datosGuardados
-            ]);
-            break;
-            
-        default:
-            http_response_code(405);
-            echo json_encode(['error' => 'Método no permitido']);
-            break;
+    $body = file_get_contents("php://input");
+    $data = json_decode($body, true);
+
+    if (!$data) {
+        echo json_encode(["error" => "JSON inválido"]);
+        exit();
     }
-    
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
-    error_log("❌ Error: " . $e->getMessage());
+
+    $ventilador = isset($data["ventilador_estado"]) ? intval($data["ventilador_estado"]) : 0;
+    //$temp       = isset($data["temperatura"]) ? floatval($data["temperatura"]) : 22;
+    //$humedad    = isset($data["humedad"]) ? floatval($data["humedad"]) : 50;
+
+    $sql = "UPDATE datos_sensor SET 
+                ventilador_estado = $ventilador,
+                
+                fecha = NOW()
+            WHERE id = $recordId";
+
+    if ($conn->query($sql) === TRUE) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Datos actualizados correctamente",
+        ]);
+    } else {
+        echo json_encode(["error" => "Error al guardar: " . $conn->error]);
+    }
+
+    exit();
 }
+
+// ----------------------------------------------------------------------------------
+echo json_encode(["error" => "Método no permitido"]);
+$conn->close();
 ?>

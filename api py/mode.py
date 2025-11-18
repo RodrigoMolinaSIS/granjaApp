@@ -10,7 +10,7 @@ app = FastAPI()
 model = YOLO("best.pt")
 
 VIDEO_SOURCE = 0   # cámara PC
-#class_names = model.names 
+class_names = model.names 
 # =======================================================
 # STREAM DE VIDEO EN JPEG (rápido y compatible)
 # =======================================================
@@ -57,7 +57,7 @@ async def inference_ws(ws: WebSocket):
         boxes = results.boxes.xyxy.tolist()
         conf  = results.boxes.conf.tolist()
         cls   = results.boxes.cls.tolist()
-        #labels = [class_names[int(c)] for c in cls]
+        labels = [class_names[int(c)] for c in cls]
 
         # FRAME BASE64
         _, buffer = cv2.imencode('.jpg', frame)
@@ -68,7 +68,7 @@ async def inference_ws(ws: WebSocket):
             "boxes": boxes,
             "conf": conf,
             "cls": cls,
-            #"names": class_names
+            "names": {int(i): name for i, name in model.names.items()}
         }
 
         await ws.send_text(json.dumps(payload))

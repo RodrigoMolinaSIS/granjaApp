@@ -16,7 +16,7 @@ class _CamerasScreenState extends State<CamerasScreen> {
   List<dynamic> conf = [];
   List<dynamic> cls = [];
 
-  //Map<int, String> names = {};
+  Map<int, String> names = {};
   double videoW = 640;
   double videoH = 480;
 
@@ -31,12 +31,19 @@ class _CamerasScreenState extends State<CamerasScreen> {
     channel.stream.listen((data) {
       final jsonData = jsonDecode(data);
 
+      // Convertir names correctamente (puede venir como Map<String,String>)
+      Map<String, dynamic> rawNames = Map<String, dynamic>.from(jsonData["names"]);
+
       setState(() {
         frameBytes = base64Decode(jsonData["frame"]);
-        boxes = jsonData["boxes"];
-        conf = jsonData["conf"];
-        cls = jsonData["cls"];
-        //names = Map<int, String>.from(jsonData["names"]); // <--- AÑADIR
+        boxes = List.from(jsonData["boxes"]);
+        conf = List.from(jsonData["conf"]);
+        cls = List.from(jsonData["cls"]);
+
+        names = {
+          for (var entry in rawNames.entries)
+            int.parse(entry.key): entry.value.toString()
+        };
       });
     });
   }
@@ -78,7 +85,7 @@ class _CamerasScreenState extends State<CamerasScreen> {
                       conf,
                       scaleX,
                       scaleY,
-                      //names,
+                      names,
                     ),
                   ),
                 ],
@@ -97,9 +104,9 @@ class BoxesPainter extends CustomPainter {
   final List<dynamic> conf;
   final double scaleX;
   final double scaleY;
-  //final Map<int, String> names;
+  final Map<int, String> names;
 
-  BoxesPainter(this.boxes, this.cls, this.conf, this.scaleX, this.scaleY /*, this.names*/);
+  BoxesPainter(this.boxes, this.cls, this.conf, this.scaleX, this.scaleY, this.names);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -125,16 +132,13 @@ class BoxesPainter extends CustomPainter {
       Rect rect = Rect.fromLTRB(x1, y1, x2, y2);
       canvas.drawRect(rect, paint);
 
-      //final classId = cls[i].toInt();
-      //final className = names[classId] ?? "Clase $classId";
-      //String labelName = names[cls[i].toInt()] ?? "unknown";
-      //final label = "$labelName ${(conf[i] * 100).toStringAsFixed(1)}%";
+      int classId = cls[i] is int ? cls[i] : (cls[i] as num).toInt();
+      String className = names[classId] ?? "unknown";
+
+      String label = "$className ${(conf[i] * 100).toStringAsFixed(1)}%";
 
       final tp = TextPainter(
-        text: TextSpan(
-          text: "ID ${cls[i]}  ${(conf[i] * 100).toStringAsFixed(1)}%",
-          style: textStyle,
-        ),
+        text: TextSpan(text: label, style: textStyle),
         textDirection: TextDirection.ltr,
       );
 

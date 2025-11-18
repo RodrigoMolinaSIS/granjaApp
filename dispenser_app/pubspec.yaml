@@ -15,6 +15,7 @@ dependencies:
   http: ^0.13.1
   web_socket_channel: ^2.4.0
   flutter_mjpeg: ^2.0.4
+  sleek_circular_slider: ^2.0.1
 
 dev_dependencies:
   flutter_test:
@@ -36,3 +37,5 @@ flutter:
     - assets/data/ambiente.json
     - assets/images/fonn.png
     - assets/images/foff.png
+    - assets/images/grano.png
+    - assets/images/granos.png

@@ -126,6 +126,13 @@ class HomeScreen extends StatelessWidget {
                       onTap: () => Navigator.pushNamed(context, '/thermal'),
                     ),
                     HomeButton(
+                      label: 'Ventilador',
+                      icon: Icons.air,
+                      color: Colors.orangeAccent,
+                      size: 100,
+                      onTap: () => Navigator.pushNamed(context, '/thermal2'),
+                    ),
+                    HomeButton(
                       label: 'Luces',
                       icon: Icons.light,
                       color: Colors.deepPurpleAccent,
