@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 luces_estado = $luces,
                 
                 fecha = NOW()
-            WHERE id = $recordId";
+            WHERE id >= $recordId";
 
     if ($conn->query($sql) === TRUE) {
         echo json_encode([

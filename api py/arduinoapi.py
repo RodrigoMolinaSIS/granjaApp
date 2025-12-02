@@ -39,6 +39,27 @@ while True:
                     print("Error: Lo que llegó no era un JSON válido.")
                 except requests.exceptions.RequestException as e:
                     print(f"Error de conexión con PHP: {e}")
+        # =====================================================
+        # 2. GET A LA API → LEER ESTADO DE LUCES
+        # =====================================================
+        try:
+            r = requests.get(URL_API)
+            if r.status_code == 200:
+                ultimo = r.json()
+
+                if "luces_estado" in ultimo:
+                    estado = int(ultimo["luces_estado"])
+
+                    if estado == 1:
+                        #print("→ LUCES=1 (encender)")
+                        ser.write(b"LUCES=1\n")
+                    else:
+                        #print("→ LUCES=0 (apagar)")
+                        ser.write(b"LUCES=0\n")
+
+        except Exception as e:
+            print(f"Error leyendo luces desde BD: {e}")
+
 
     except KeyboardInterrupt:
         print("Saliendo...")

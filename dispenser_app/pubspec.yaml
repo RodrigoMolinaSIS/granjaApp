@@ -16,6 +16,7 @@ dependencies:
   web_socket_channel: ^2.4.0
   flutter_mjpeg: ^2.0.4
   sleek_circular_slider: ^2.0.1
+  intl: ^0.19.0 # Opcional, para formatear la hora (HH:mm)
 
 dev_dependencies:
   flutter_test:

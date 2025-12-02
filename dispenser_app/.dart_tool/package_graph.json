@@ -12,6 +12,7 @@
         "flutter",
         "flutter_mjpeg",
         "http",
+        "intl",
         "path_provider",
         "sleek_circular_slider",
         "web_socket_channel"
@@ -36,6 +37,22 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.19.0",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "sleek_circular_slider",
+      "version": "2.1.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
@@ -382,13 +399,6 @@
       "name": "vm_service",
       "version": "15.0.2",
       "dependencies": []
-    },
-    {
-      "name": "sleek_circular_slider",
-      "version": "2.1.0",
-      "dependencies": [
-        "flutter"
-      ]
     }
   ],
   "configVersion": 1

@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($conn->query($sqlInsert) === TRUE) {
         
         // 3. MAGIA: Eliminar registros antiguos (> 5 segundos)
-        $sqlClean = "DELETE FROM datos_sensor WHERE fecha < (NOW() - INTERVAL 5 SECOND)";
+        $sqlClean = "DELETE FROM datos_sensor WHERE fecha < (NOW() - INTERVAL 10 SECOND)";
         $conn->query($sqlClean);
 
         // Respuesta JSON limpia (Sin echo de texto plano antes)
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ==================================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    $sql = "SELECT * FROM datos_sensor ORDER BY fecha DESC LIMIT 1";
+    $sql = "SELECT * FROM datos_sensor ORDER BY fecha ASC LIMIT 1";
     $res = $conn->query($sql);
 
     if ($res && $res->num_rows > 0) {

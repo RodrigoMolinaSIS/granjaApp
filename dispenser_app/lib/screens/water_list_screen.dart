@@ -135,65 +135,78 @@ class _WaterListScreenState extends State<WaterListScreen> {
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: Column(
-            children: [
-              SizedBox(height: 20),
-              Text(
-                "NIVEL DE AGUA",
-                style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.tealAccent,
-                    fontWeight: FontWeight.bold),
-              ),
+        child:Container(
 
-              SizedBox(height: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            image: DecorationImage(
+              image: AssetImage('images/fondop.jpg'),
+              fit: BoxFit.cover,
 
-              Text(
-                "Nivel actual: ${percentage.toStringAsFixed(1)}%",
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
+            ),
+          ),
 
-              SizedBox(height: 20),
 
-              if (isLoading)
-                Column(
-                  children: [
-                    CircularProgressIndicator(color: Colors.tealAccent),
-                    SizedBox(height: 10),
-                    Text("Cargando...", style: TextStyle(color: Colors.white)),
-                  ],
+          child: Center(
+            child: Column(
+              children: [
+                SizedBox(height: 20),
+                Text(
+                  "NIVEL DE AGUA",
+                  style: TextStyle(
+                      fontSize: 24,
+                      color: Colors.tealAccent,
+                      fontWeight: FontWeight.bold),
                 ),
 
-              if (errorMessage.isNotEmpty)
-                Column(
-                  children: [
-                    Icon(Icons.error, color: Colors.red),
-                    SizedBox(height: 10),
-                    Text(errorMessage, style: TextStyle(color: Colors.white)),
-                  ],
+                SizedBox(height: 10),
+
+                Text(
+                  "Nivel actual: ${percentage.toStringAsFixed(1)}%",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
 
-              if (!isLoading && errorMessage.isEmpty)
-                _vasoAgua(),
+                SizedBox(height: 20),
 
-              SizedBox(height: 35),
+                if (isLoading)
+                  Column(
+                    children: [
+                      CircularProgressIndicator(color: Colors.tealAccent),
+                      SizedBox(height: 10),
+                      Text("Cargando...", style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
 
-              ElevatedButton(
-                onPressed: _recargarAgua,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.tealAccent,
-                  foregroundColor: Colors.black,
-                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 18),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15)),
+                if (errorMessage.isNotEmpty)
+                  Column(
+                    children: [
+                      Icon(Icons.error, color: Colors.red),
+                      SizedBox(height: 10),
+                      Text(errorMessage, style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+
+                if (!isLoading && errorMessage.isEmpty)
+                  _vasoAgua(),
+
+                SizedBox(height: 35),
+
+                ElevatedButton(
+                  onPressed: _recargarAgua,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.tealAccent,
+                    foregroundColor: Colors.black,
+                    padding: EdgeInsets.symmetric(horizontal: 60, vertical: 18),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15)),
+                  ),
+                  child: Text(
+                    isReloading ? "RECARGANDO..." : "RECARGAR",
+                    style: TextStyle(fontSize: 22),
+                  ),
                 ),
-                child: Text(
-                  isReloading ? "RECARGANDO..." : "RECARGAR",
-                  style: TextStyle(fontSize: 22),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -78,4 +78,4 @@ async def inference_ws(ws: WebSocket):
 # ===============  EJECUCIÓN CON UVICORN  ===============
 # =======================================================
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.100.123", port=8000)
+    uvicorn.run(app, host="192.168.5.104", port=8000)

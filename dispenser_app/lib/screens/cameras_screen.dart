@@ -19,13 +19,13 @@ class _CamerasScreenState extends State<CamerasScreen> {
   Map<int, String> names = {};
   double videoW = 640;
   double videoH = 480;
-
+  List<String> savedImages = [];
   @override
   void initState() {
     super.initState();
 
     channel = WebSocketChannel.connect(
-      Uri.parse("ws://192.168.100.123:8000/ws"),
+      Uri.parse("ws://192.168.108.1:8000/ws"),
     );
 
     channel.stream.listen((data) {
@@ -44,6 +44,11 @@ class _CamerasScreenState extends State<CamerasScreen> {
           for (var entry in rawNames.entries)
             int.parse(entry.key): entry.value.toString()
         };
+
+        if (jsonData["saved_image"] != null &&
+            jsonData["saved_image"] != "") {
+          savedImages.add(jsonData["saved_image"]);
+        }
       });
     });
   }
